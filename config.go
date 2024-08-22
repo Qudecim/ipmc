@@ -6,7 +6,7 @@ type Config struct {
 	Snapshot_directory string
 }
 
-func newConfig(binlog_directory string, binlog_max_writes int, snapshot_directory string) *Config {
+func NewConfig(binlog_directory string, binlog_max_writes int, snapshot_directory string) *Config {
 	return &Config{
 		Binlog_directory:   binlog_directory,
 		Binlog_max_writes:  binlog_max_writes,

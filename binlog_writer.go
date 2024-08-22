@@ -22,7 +22,7 @@ type BinlogWriter struct {
 	currentSource *os.File
 }
 
-func NewBinlogWriter(directory string, maxWrites int) *BinlogWriter {
+func newBinlogWriter(directory string, maxWrites int) *BinlogWriter {
 	return &BinlogWriter{
 		directory: directory,
 		current:   Timestamp(),
@@ -31,7 +31,7 @@ func NewBinlogWriter(directory string, maxWrites int) *BinlogWriter {
 	}
 }
 
-func (b *BinlogWriter) Run() {
+func (b *BinlogWriter) run() {
 	b.openBinlog()
 
 	for {

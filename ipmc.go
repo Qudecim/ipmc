@@ -7,23 +7,26 @@ import (
 )
 
 type App struct {
-	data   map[string]*Item
-	binlog *BinlogWriter
-	config *Config
+	data         map[string]*Item
+	binlog       *BinlogWriter
+	binlogReader *BinlogReader
+	config       *Config
 
 	rw sync.RWMutex
 	Wg sync.WaitGroup
 }
 
-func NewApp(binlog *BinlogWriter, config *Config) *App {
+func NewApp(config *Config) *App {
 	return &App{
 		data:   make(map[string]*Item),
-		binlog: binlog,
+		binlog: newBinlogWriter(config.Binlog_directory, config.Binlog_max_writes),
 		config: config,
 	}
 }
 
 func (a *App) Init() {
+	a.binlogReader = newBinlogReader(a, a.config.Binlog_directory)
+
 	err := os.MkdirAll(a.config.Binlog_directory, 0755)
 	if err != nil {
 		fmt.Printf("Error creating directory: %v\n", err)
@@ -35,6 +38,18 @@ func (a *App) Init() {
 		fmt.Printf("Error creating directory: %v\n", err)
 		return
 	}
+
+	a.binlogReader.read()
+
+	go a.binlog.run()
+}
+
+func (a *App) NewConnection() {
+	a.Wg.Add(1)
+}
+
+func (a *App) CloseConnection() {
+	a.Wg.Done()
 }
 
 func (a *App) Set(key string, value string) {
@@ -54,7 +69,10 @@ func (a *App) Get(key string) (string, bool) {
 	a.rw.RLock()
 	value, ok := a.data[key]
 	a.rw.RUnlock()
-	return value.getValue(), ok
+	if ok {
+		return value.getValue(), ok
+	}
+	return "", ok
 }
 
 func (a *App) Push(key string, value string) bool {

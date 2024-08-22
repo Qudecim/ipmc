@@ -11,23 +11,22 @@ type BinlogReader struct {
 	app       *App
 }
 
-func NewBinlogReader(app *App, directory string) *BinlogReader {
+func newBinlogReader(app *App, directory string) *BinlogReader {
 	return &BinlogReader{
 		directory: directory,
 		app:       app,
 	}
 }
 
-func (b *BinlogReader) Read() {
+func (b *BinlogReader) read() {
 
 	binlogs := b.getBinlogs(0)
 	for _, binlog := range binlogs {
-		b.readBinlog(strconv.Itoa(binlog))
+		b.parseBinlog(strconv.Itoa(binlog))
 	}
-
 }
 
-func (b *BinlogReader) readBinlog(binlog string) error {
+func (b *BinlogReader) parseBinlog(binlog string) error {
 	f, err := os.Open(b.directory + binlog)
 	if err != nil {
 		return err
