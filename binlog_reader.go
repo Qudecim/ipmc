@@ -61,6 +61,7 @@ func (b *BinlogReader) readFromFile(file *os.File) error {
 	step := 0
 	method := ""
 	key := ""
+	key_item := ""
 	for scanner.Scan() {
 		text := deescapeString(scanner.Text())
 		switch step {
@@ -69,11 +70,19 @@ func (b *BinlogReader) readFromFile(file *os.File) error {
 		case 1:
 			key = text
 		case 2:
+			key_item = text
+		case 3:
 			if method == "s" {
 				b.app.forceSet(key, text)
 			}
 			if method == "p" {
-				b.app.forcePush(key, text)
+				b.app.forcePush(key, key_item, text)
+			}
+			if method == "r" {
+				b.app.forceRemove(key, key_item)
+			}
+			if method == "q" {
+				b.app.forceDelete(key)
 			}
 			if method == "i" {
 				b.app.forceIncrement(key)
@@ -84,7 +93,7 @@ func (b *BinlogReader) readFromFile(file *os.File) error {
 
 		}
 
-		if step == 2 {
+		if step == 3 {
 			step = 0
 		} else {
 			step++

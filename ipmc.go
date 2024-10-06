@@ -75,38 +75,62 @@ func (a *App) Get(key string) (string, bool) {
 	return "", ok
 }
 
-func (a *App) Push(key string, value string) bool {
+func (a *App) Delete(key string) {
+	a.rw.Lock()
+	_, exist := a.data[key]
+	if exist {
+		delete(a.data, key)
+	}
+	a.rw.Unlock()
+
+	a.binlog.add("q", key, "")
+}
+
+func (a *App) Push(key string, key_item string, value string) bool {
 	a.rw.Lock()
 	parent, exist := a.data[key]
 	if !exist {
 		parent = newItemList(key)
 		a.data[key] = parent
 	}
-	valueItem, ok := a.data[value]
+	valueItem, ok := a.data[key_item]
 	if ok {
-		parent.items[value] = valueItem
+		parent.items[key_item] = valueItem
 	}
 	a.rw.Unlock()
 
 	if ok {
-		a.binlog.add("p", key, value)
+		a.binlog.add_push("p", key, key_item, value)
 	}
 	return ok
 }
 
-func (a *App) Pull(key string) ([]string, bool) {
-	var items []string
+func (a *App) Pull(key string) (map[string]string, bool) {
+	items := make(map[string]string)
 
 	a.rw.Lock()
 	value, ok := a.data[key]
 	if ok {
-		for _, item := range value.items {
-			items = append(items, item.getValue())
+		for key, item := range value.items {
+			items[key] = item.getValue()
 		}
 	}
 	a.rw.Unlock()
 
 	return items, ok
+}
+
+func (a *App) Remove(key string, key_item string) {
+	a.rw.Lock()
+	parent, exist := a.data[key]
+	if exist {
+		_, exist2 := parent.items[key_item]
+		if exist2 {
+			delete(parent.items, key_item)
+			a.binlog.add_push("r", key, key_item, "")
+		}
+	}
+	a.rw.Unlock()
 }
 
 func (a *App) Increment(key string) (int64, bool) {
@@ -148,15 +172,32 @@ func (a *App) forceSet(key string, value string) {
 	}
 }
 
-func (a *App) forcePush(key string, value string) {
+func (a *App) forcePush(key string, key_item string, value string) {
 	parent, exist := a.data[key]
 	if !exist {
 		parent = newItemList(key)
 		a.data[key] = parent
 	}
-	valueItem, ok := a.data[value]
+	valueItem, ok := a.data[key_item]
 	if ok {
-		parent.items[value] = valueItem
+		parent.items[key_item] = valueItem
+	}
+}
+
+func (a *App) forceRemove(key string, key_item string) {
+	parent, exist := a.data[key]
+	if exist {
+		_, exist2 := parent.items[key_item]
+		if exist2 {
+			delete(parent.items, key_item)
+		}
+	}
+}
+
+func (a *App) forceDelete(key string) {
+	_, exist := a.data[key]
+	if exist {
+		delete(a.data, key)
 	}
 }
 
