@@ -34,7 +34,6 @@ func newBinlogWriter(directory string, maxWrites int) *BinlogWriter {
 
 func (b *BinlogWriter) run() {
 	b.openBinlog()
-
 	for {
 		select {
 		case item := <-b.stack:
