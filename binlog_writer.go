@@ -6,10 +6,9 @@ import (
 )
 
 type keyValue struct {
-	method   string
-	key      string
-	key_item string
-	value    string
+	method string
+	key    string
+	value  string
 }
 
 type BinlogWriter struct {
