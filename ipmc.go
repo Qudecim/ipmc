@@ -86,21 +86,21 @@ func (a *App) Delete(key string) {
 	a.binlog.add("q", key, "")
 }
 
-func (a *App) Push(key string, key_item string, value string) bool {
+func (a *App) Push(key string, value string) bool {
 	a.rw.Lock()
 	parent, exist := a.data[key]
 	if !exist {
 		parent = newItemList(key)
 		a.data[key] = parent
 	}
-	valueItem, ok := a.data[key_item]
+	valueItem, ok := a.data[value]
 	if ok {
-		parent.items[key_item] = valueItem
+		parent.items[value] = valueItem
 	}
 	a.rw.Unlock()
 
 	if ok {
-		a.binlog.add_push("p", key, key_item, value)
+		a.binlog.add("p", key, value)
 	}
 	return ok
 }
@@ -120,14 +120,14 @@ func (a *App) Pull(key string) (map[string]string, bool) {
 	return items, ok
 }
 
-func (a *App) Remove(key string, key_item string) {
+func (a *App) Remove(key string, value string) {
 	a.rw.Lock()
 	parent, exist := a.data[key]
 	if exist {
-		_, exist2 := parent.items[key_item]
+		_, exist2 := parent.items[value]
 		if exist2 {
-			delete(parent.items, key_item)
-			a.binlog.add_push("r", key, key_item, "")
+			delete(parent.items, value)
+			a.binlog.add("r", key, value)
 		}
 	}
 	a.rw.Unlock()
@@ -172,24 +172,24 @@ func (a *App) forceSet(key string, value string) {
 	}
 }
 
-func (a *App) forcePush(key string, key_item string, value string) {
+func (a *App) forcePush(key string, value string) {
 	parent, exist := a.data[key]
 	if !exist {
 		parent = newItemList(key)
 		a.data[key] = parent
 	}
-	valueItem, ok := a.data[key_item]
+	valueItem, ok := a.data[value]
 	if ok {
-		parent.items[key_item] = valueItem
+		parent.items[value] = valueItem
 	}
 }
 
-func (a *App) forceRemove(key string, key_item string) {
+func (a *App) forceRemove(key string, value string) {
 	parent, exist := a.data[key]
 	if exist {
-		_, exist2 := parent.items[key_item]
+		_, exist2 := parent.items[value]
 		if exist2 {
-			delete(parent.items, key_item)
+			delete(parent.items, value)
 		}
 	}
 }

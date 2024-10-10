@@ -55,11 +55,6 @@ func (b *BinlogWriter) add(method string, key string, value string) {
 	b.stack <- keyValueItem
 }
 
-func (b *BinlogWriter) add_push(method string, key string, key_item string, value string) {
-	keyValueItem := &keyValue{method: method, key: key, key_item: key_item, value: value}
-	b.stack <- keyValueItem
-}
-
 func (b *BinlogWriter) openBinlog() error {
 
 	if b.currentSource != nil {
@@ -79,10 +74,9 @@ func (b *BinlogWriter) addToBinlog(keyValueItem *keyValue) error {
 
 	method := strings.ReplaceAll(keyValueItem.method, "\n", "\\n")
 	key := strings.ReplaceAll(keyValueItem.key, "\n", "\\n")
-	key_item := strings.ReplaceAll(keyValueItem.key_item, "\n", "\\n")
 	value := strings.ReplaceAll(keyValueItem.value, "\n", "\\n")
 
-	text := method + "\n" + key + "\n" + key_item + "\n" + value + "\n"
+	text := method + "\n" + key + "\n" + value + "\n"
 
 	if _, err := b.currentSource.WriteString(text); err != nil {
 		return err
