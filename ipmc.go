@@ -120,6 +120,17 @@ func (a *App) Pull(key string) (map[string]string, bool) {
 	return items, ok
 }
 
+func (a *App) Count(key string) (int, bool) {
+	a.rw.Lock()
+	value, ok := a.data[key]
+	if ok {
+		return len(value.items), true
+	}
+	a.rw.Unlock()
+
+	return 0, false
+}
+
 func (a *App) Remove(key string, value string) {
 	a.rw.Lock()
 	parent, exist := a.data[key]
